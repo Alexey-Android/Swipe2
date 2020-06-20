@@ -2,12 +2,15 @@ package ru.netology.lists;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,6 +19,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +29,7 @@ public class ListViewActivity extends AppCompatActivity {
     private static final String ATTRIBUTE_NAME_SUBTITLE = "subtitle";
 
     List<Map<String, String>> simpleAdapterContent = new ArrayList<>();
+    private ArrayList<Integer> index = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,16 +38,26 @@ public class ListViewActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        ListView list = findViewById(R.id.list);
+        if (savedInstanceState != null) {
+            index = savedInstanceState.getIntegerArrayList("number");
+        }
+
+        final ListView list = findViewById(R.id.list);
         prepareContent();
+        Iterator<Integer> it = index.iterator();
+        while (it.hasNext()) {
+            int i = it.next();
+            simpleAdapterContent.remove(i);
+        }
 
         final BaseAdapter listContentAdapter = createAdapter(simpleAdapterContent);
-
 
         list.setAdapter(listContentAdapter);
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                index.add(position);
 
                 simpleAdapterContent.remove(position);
                 listContentAdapter.notifyDataSetChanged();
@@ -53,13 +68,16 @@ public class ListViewActivity extends AppCompatActivity {
         refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+                //очистка экрана
                 simpleAdapterContent.clear();
+                //загрузка данных
                 prepareContent();
+                //сообщение адаптеру - данные изменились
                 listContentAdapter.notifyDataSetChanged();
+                //прекратить обновление
                 refreshLayout.setRefreshing(false);
             }
         });
-
     }
 
     private BaseAdapter createAdapter(List<Map<String, String>> values) {
@@ -111,4 +129,10 @@ public class ListViewActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putIntegerArrayList("number", index);
+
+    }
 }
